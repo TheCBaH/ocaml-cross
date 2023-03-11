@@ -1,0 +1,36 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+    "name": "OCaml cross builder",
+    "build":  {
+        "dockerfile": "Dockerfile",
+        "cacheFrom": "ghcr.io/thecbah/ocaml-cross/devcontainer:master"
+    },
+    "features": {
+        "./features/apt-packages": {
+            "packages": "file libc6-dev-i386 qemu-user time"
+        },
+        "./features/musl-cross": {
+            "architectures": "aarch64 riscv64 x86_64"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "enableNonRootDocker": "true",
+            "moby": "true"
+        },
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": "true",
+            "username": "vscode",
+            "userUid": "1000",
+            "userGid": "1000",
+            "upgradePackages": "false"
+        }
+    },
+    "remoteEnv": {
+        "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+    },
+    "postCreateCommand": {
+        "submodules": "set -eux;git submodule update --recursive --init;make patches.apply",
+        "repo": "make repo OCAML_VER=4.12"
+    },
+    "remoteUser": "vscode",
+    "waitFor": "postCreateCommand"
+}

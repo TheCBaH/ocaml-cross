@@ -1,0 +1,9 @@
+[submodule "dkml-compiler"]
+	path = dkml-compiler
+	url = https://github.com/diskuv/dkml-compiler.git
+[submodule "dkml-runtime-common"]
+	path = dkml-runtime-common
+	url = https://github.com/diskuv/dkml-runtime-common.git
+[submodule "dune"]
+	path = dune
+	url = https://github.com/ocaml/dune.git

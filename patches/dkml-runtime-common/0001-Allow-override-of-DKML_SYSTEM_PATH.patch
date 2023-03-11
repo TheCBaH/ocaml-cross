@@ -1,0 +1,24 @@
+From f87351854333b81fd40251ca810e01336f86e671 Mon Sep 17 00:00:00 2001
+From: "Vladimir N. Silyaev" <vsilyaev@gmail.com>
+Date: Sun, 19 Mar 2023 03:12:57 +0000
+Subject: [PATCH] Allow override of DKML_SYSTEM_PATH
+
+---
+ unix/crossplatform-functions.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/unix/crossplatform-functions.sh b/unix/crossplatform-functions.sh
+index 4d05239..3f58281 100755
+--- a/unix/crossplatform-functions.sh
++++ b/unix/crossplatform-functions.sh
+@@ -328,6 +328,7 @@ __autodetect_system_path_helper() {
+     if [ -n "${DKMLHOME_UNIX:-}" ] && [ -d "$DKMLHOME_UNIX/bin" ]; then
+         DKML_SYSTEM_PATH="$DKMLHOME_UNIX/bin:$DKML_SYSTEM_PATH"
+     fi
++    DKML_SYSTEM_PATH=${_DKML_SYSTEM_PATH:-${DKML_SYSTEM_PATH}}
+ }
+ 
+ # Get a path that has system binaries, and Git, and nothing else.
+-- 
+2.39.1
+

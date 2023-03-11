@@ -1,0 +1,13 @@
+{
+    "name": "MUSL C/C++ GCC cross compiler",
+    "id": "musl-cross",
+    "version": "0.0.1",
+    "description": "Install MUSL C/C++ cross compiler",
+    "options": {
+        "architectures": {
+            "type": "string",
+            "default": "",
+            "description": "architectures to install"
+        }
+    }
+}

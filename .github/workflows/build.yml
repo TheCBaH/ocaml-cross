@@ -1,0 +1,161 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: 0 1 * * MON
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        host:
+          - runner
+        ocaml:
+          - 4.12
+#          - 4.13.0
+          - 4.14.0
+#         - '5.0'
+        target:
+           - aarch64
+           - riscv64
+           - x86_64
+        include:
+          - host: devcontainer
+            target: aarch64
+            ocaml: 4.12
+          - host: devcontainer
+            target: aarch64
+            ocaml: 4.14.0
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: devcontainer
+      uses: ./.github/workflows/actions/devcontainer
+      if: ${{ matrix.host == 'devcontainer' }}
+      id: devcontainer
+    - name: setup
+      run: |
+        case "${{ matrix.host }}" in
+        devcontainer)
+          echo 'EXEC=${{ steps.devcontainer.outputs.exec }} env _DKML_SYSTEM_PATH=/bin:/usr/bin:/usr/local/bin' >> $GITHUB_ENV
+          ;;
+        runner)
+          echo "::group::packages"
+          sudo env PACKAGES='file qemu-user time' .devcontainer/features/apt-packages/install.sh
+          echo "::group::musl-cross"
+          env ARCHITECTURES='${{ matrix.target }}' .devcontainer/features/musl-cross/install.sh ${HOME}/.local/
+          ${{ matrix.target }}-linux-musl-gcc --version
+          echo "EXEC=env _DKML_SYSTEM_PATH=/bin:/usr/bin:${HOME}/.local/bin" >> $GITHUB_ENV
+          ;;
+        esac
+    - name: repo
+      run: |
+        make repo OCAML_VER=${{ matrix.ocaml }}
+        if [ '${{ matrix.host }}' != 'devcontainer' ];  then
+          make patches.apply
+        fi
+    - name: build
+      run: |
+        ${{ env.EXEC }} ${{ matrix.target }}-linux-musl-gcc --version
+        ${{ env.EXEC }} make build OCAML_VER=${{ matrix.ocaml }}
+    - name: debian
+      uses: ./.github/workflows/actions/docker
+      with:
+        image: debian
+    - name: ubuntu
+      uses: ./.github/workflows/actions/docker
+      with:
+        image: ubuntu
+    - name: install
+      run: |
+        echo "::group::install"
+        ${{ env.EXEC }} make cross.install TARGET=
+        echo "::group::test"
+        ${{ env.EXEC }} make native_install.test
+        echo "::group::test relocated"
+        case "${{ matrix.host }}" in
+        devcontainer)
+          make native_relocated.test
+          ;;
+        runner)
+          make native_relocated.test RELOCATED_IMAGE=ubuntu
+          ;;
+        esac
+    - name: cross.build
+      run: |
+        ${{ env.EXEC }} make cross.build OCAML_VER=${{ matrix.ocaml }} TARGET=${{ matrix.target }}-linux-musl
+    - name: cross.test
+      run: |
+        ${{ env.EXEC }} make cross.test TARGET=${{ matrix.target }}-linux-musl
+    - name: cross.install
+      run: |
+        echo "::group::${{ matrix.target }}"
+        ${{ env.EXEC }} make cross.install TARGET=${{ matrix.target }}-linux-musl
+        echo "::group::${{ matrix.target }} test"
+        ${{ env.EXEC }} make cross_install.test TARGET=${{ matrix.target }}-linux-musl
+        echo "::group::${{ matrix.target }} relocated"
+        case "${{ matrix.host }}" in
+        devcontainer)
+          make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl
+          ;;
+        runner)
+          make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl RELOCATED_IMAGE=ubuntu
+          ;;
+        esac
+    - name: package
+      run: |
+        set -x
+        tar='ocaml-cross-${{ matrix.ocaml }}-${{ matrix.host }}.tar'
+        tar -cf $tar --owner=0 --group=0 -C test/_build/host .
+        compress='-9'
+        compress='-7'
+        xz --keep --compress $compress --threads 0 $tar
+        tar='ocaml-cross-${{ matrix.ocaml }}-${{ matrix.target }}-linux-musl-${{ matrix.host }}.tar'
+        tar -cf $tar --owner=0 --group=0 -C test/_build/${{ matrix.target }}-linux-musl .
+        xz --keep --compress $compress --threads 0 $tar
+        du -sh ocaml-cross-*
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ocaml-cross-${{ matrix.ocaml }}-${{ matrix.target }}-${{ matrix.host }}
+        path: |
+          ocaml-cross-${{ matrix.ocaml }}-${{ matrix.host }}.tar.xz
+          ocaml-cross-${{ matrix.ocaml }}-${{ matrix.target }}-linux-musl-${{ matrix.host }}.tar.xz
+    - name: dune
+      run: |
+        ${{ env.EXEC }} make dune.build
+  test:
+    needs: [build]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+           - aarch64
+           - riscv64
+           - x86_64
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: false
+    - uses: actions/download-artifact@v3
+      with:
+        path: .artifacts
+    - name: setup
+      run: |
+        echo "::group::packages"
+        sudo env PACKAGES='file qemu-user time' .devcontainer/features/apt-packages/install.sh
+        echo "::group::musl-cross"
+        sudo env ARCHITECTURES='${{ matrix.target }}' .devcontainer/features/musl-cross/install.sh
+    - name: test
+      run: |
+        ls -alr .artifacts
+        .github/workflows/test-release.sh .artifacts ${{ matrix.target }} runner
