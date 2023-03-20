@@ -22,9 +22,9 @@ set -eu
 #set -x
 self="$0"
 name=$(basename $self)
-dir_bin="$(dirname $(readlink -e $self))"
+dir_bin="$(dirname $(readlink -f $self))"
 tool="${name##%CROSS%-}"
-export OCAMLLIB="$(readlink -e $dir_bin/../lib/ocaml)"
+export OCAMLLIB="$(readlink -f $dir_bin/../lib/ocaml)"
 exec $dir_bin/ocamlrun $dir_bin/$tool "$@"
 _EOF_
 
@@ -35,9 +35,9 @@ set -eu
 #set -x
 self="$0"
 name=$(basename $self)
-dir_bin="$(dirname $(readlink -e $self))"
+dir_bin="$(dirname $(readlink -f $self))"
 tool="${name##%CROSS%-}"
-export OCAMLLIB="$(readlink -e $dir_bin/../lib/ocaml)"
+export OCAMLLIB="$(readlink -f $dir_bin/../lib/ocaml)"
 exec $dir_bin/$tool "$@"
 _EOF_
 

@@ -1,0 +1,23 @@
+ARG OS_VER=latest
+FROM alpine:${OS_VER}
+COPY musl-cross/install.sh /root/musl-cross.sh
+RUN set -eux;\
+    apk --no-cache add\
+ bash\
+ file\
+ gcc\
+ git\
+ libc-dev\
+ make\
+ qemu-aarch64\
+ qemu-arm\
+ qemu-i386\
+ qemu-ppc64\
+ qemu-ppc\
+ qemu-riscv64\
+ qemu-s390x\
+ qemu-x86_64\
+ wget\
+ ;\
+    env ARCHITECTURES='aarch64 riscv64 x86_64' /root/musl-cross.sh;\
+    echo DONE

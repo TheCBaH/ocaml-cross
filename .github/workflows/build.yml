@@ -31,6 +31,12 @@ jobs:
           - host: devcontainer
             target: aarch64
             ocaml: 4.14.0
+          - host: alpine
+            target: aarch64
+            ocaml: 4.12
+          - host: alpine
+            target: aarch64
+            ocaml: 4.14.0
     steps:
     - name: checkout
       uses: actions/checkout@v3
@@ -42,37 +48,49 @@ jobs:
       id: devcontainer
     - name: setup
       run: |
-        case "${{ matrix.host }}" in
+        host="${{ matrix.host }}"
+        case "$host" in
+        alpine | manylinux2014)
+          echo "EXEC=.github/workflows/with-docker.sh $host" >> $GITHUB_ENV
+          ;;
         devcontainer)
-          echo 'EXEC=${{ steps.devcontainer.outputs.exec }} env _DKML_SYSTEM_PATH=/bin:/usr/bin:/usr/local/bin' >> $GITHUB_ENV
+          echo 'EXEC=${{ steps.devcontainer.outputs.exec }}' >> $GITHUB_ENV
           ;;
         runner)
           echo "::group::packages"
           sudo env PACKAGES='file qemu-user time' .devcontainer/features/apt-packages/install.sh
           echo "::group::musl-cross"
           env ARCHITECTURES='${{ matrix.target }}' .devcontainer/features/musl-cross/install.sh ${HOME}/.local/
-          ${{ matrix.target }}-linux-musl-gcc --version
-          echo "EXEC=env _DKML_SYSTEM_PATH=/bin:/usr/bin:${HOME}/.local/bin" >> $GITHUB_ENV
           ;;
         esac
+    - name: docker images
+      uses: ./.github/workflows/actions/docker
+      with:
+        image: >-
+          alpine
+          debian
+          ubuntu
     - name: repo
       run: |
         make repo OCAML_VER=${{ matrix.ocaml }}
         if [ '${{ matrix.host }}' != 'devcontainer' ];  then
           make patches.apply
         fi
+    - name: configure
+      run: |
+        ${{ env.EXEC }} make extract linux-musl.targets configure OCAML_VER=${{ matrix.ocaml }}
+        host="${{ matrix.host }}"
+        case "$host" in
+        alpine)
+          ${{ env.EXEC }} make native.build.patch-$host OCAML_VER=${{ matrix.ocaml }}
+          ;;
+        esac
     - name: build
       run: |
-        ${{ env.EXEC }} ${{ matrix.target }}-linux-musl-gcc --version
-        ${{ env.EXEC }} make build OCAML_VER=${{ matrix.ocaml }}
-    - name: debian
-      uses: ./.github/workflows/actions/docker
-      with:
-        image: debian
-    - name: ubuntu
-      uses: ./.github/workflows/actions/docker
-      with:
-        image: ubuntu
+        ${{ env.EXEC }} make native.build OCAML_VER=${{ matrix.ocaml }}
+    - name: test
+      run: |
+        ${{ env.EXEC }} make native.test OCAML_VER=${{ matrix.ocaml }}
     - name: install
       run: |
         echo "::group::install"

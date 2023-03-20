@@ -29,7 +29,6 @@ runs:
       shell: bash
       id: setup
       run: |
-        set -x
         echo "::group::cache"
         npm install -g @devcontainers/cli
         IMAGE_ID=${{ inputs.registry }}/$GITHUB_REPOSITORY/${{ inputs.name }}

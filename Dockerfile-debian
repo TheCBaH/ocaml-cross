@@ -1,4 +1,4 @@
-ARG OS_VER=bullseye
+ARG OS_VER=latest
 FROM debian:${OS_VER}
 COPY musl-cross/install.sh /root/musl-cross.sh
 RUN set -eux;\

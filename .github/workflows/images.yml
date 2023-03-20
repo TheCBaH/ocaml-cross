@@ -11,15 +11,13 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
-    - name: debian
+    - name: images
       uses: ./.github/workflows/actions/docker
       with:
-        image: debian
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - name: ubuntu
-      uses: ./.github/workflows/actions/docker
-      with:
-        image: ubuntu
+        image: >-
+          alpine
+          debian
+          ubuntu
         password: ${{ secrets.GITHUB_TOKEN }}
   devcontainer:
     runs-on: ubuntu-latest

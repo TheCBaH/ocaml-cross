@@ -9,6 +9,9 @@ inputs:
     description: 'Server address of Docker registry. If not set then will default to Docker Hub'
     required: false
     default: 'ghcr.io'
+  name:
+    description: 'Publicly visiblle name of the image/package'
+    required: false
   username:
     description: 'Username used to log against the Docker registry'
     required: false
@@ -31,36 +34,47 @@ runs:
       shell: bash
       id: setup
       run: |
-        echo "::group::fetch"
         set -x
-        image=$(make ${{ inputs.image }}.image_print)
-        IMAGE_ID=${{ inputs.registry }}/$GITHUB_REPOSITORY/${{ inputs.image }}
-        IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-        TAG="$GITHUB_REF_NAME"
-        TAG=$(echo $TAG | tr '[A-Z].' '[a-z]_')
-        old_id=''
-        if docker pull $IMAGE_ID:$TAG; then
-          old_id=$(docker image inspect $IMAGE_ID:$TAG --format "{{.ID}}")
-        fi
-        echo "::group::build"
-        make ${{ inputs.image }}.image DOCKER_BUILD_OPTS="--cache-from=$IMAGE_ID:$TAG"
-        if [ -n '${{ inputs.password }}' ]; then
-          echo "::group::push"
-          new_id=$(docker image inspect $image --format "{{.ID}}")
-          if [ "$old_id" != "$new_id" ]; then
-            docker tag $image $IMAGE_ID:$TAG
-            username='${{ inputs.username }}'
-            echo '${{ inputs.password }}' | docker login ${{ inputs.registry }} -u ${username:-'${{ github.actor }}'} --password-stdin
-            if docker push $IMAGE_ID:$TAG ; then
-              echo "::info :: pushed $IMAGE_ID:$TAG"
-            else
-              echo "::warning :: can't push $IMAGE_ID:$TAG"
-              new_id=
-            fi
-            docker logout ${{ inputs.registry }}
+        for image in ${{ inputs.image }}; do
+          echo "::group::fetch $image"
+          repo_image=$(make $image.image_print)
+          package='${{ inputs.package  }}'
+          package="${package:-ci_cache}"
+          IMAGE_ID=${{ inputs.registry }}/$GITHUB_REPOSITORY/$package
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          TAG="$GITHUB_REF_NAME"
+          TAG=$(echo $TAG | tr '[A-Z].' '[a-z]_')
+          old_id=''
+          if [ -z '${{ inputs.package  }}' ]; then
+            REGISTRY_IMAGE="$IMAGE_ID:${image}_$TAG"
+          else
+            REGISTRY_IMAGE="$IMAGE_ID:$TAG"
           fi
-        fi
-        if [ -n "${old_id}${new_id}" ]; then
-          echo "fetch=docker pull $IMAGE_ID:$TAG" >> $GITHUB_OUTPUT
-          echo "cache=DOCKER_BUILD_OPTS='--cache-from=$IMAGE_ID:$TAG'" >> $GITHUB_OUTPUT
-        fi
+          if docker pull $REGISTRY_IMAGE; then
+            old_id=$(docker image inspect $REGISTRY_IMAGE --format "{{.ID}}")
+            echo "::info :: $image - using $REGISTRY_IMAGE as cache $old_id"
+          fi
+          echo "::group::build $image"
+          make $image.image DOCKER_BUILD_OPTS="--cache-from=$REGISTRY_IMAGE"
+          if [ -n '${{ inputs.password }}' ]; then
+            echo "::group::push $image"
+            new_id=$(docker image inspect $repo_image --format "{{.ID}}")
+            if [ "$old_id" != "$new_id" ]; then
+              docker tag $repo_image $REGISTRY_IMAGE
+              username='${{ inputs.username }}'
+              echo '${{ inputs.password }}' | docker login ${{ inputs.registry }} -u ${username:-'${{ github.actor }}'} --password-stdin
+              if docker push $REGISTRY_IMAGE; then
+                echo "::info :: $image pushed as $REGISTRY_IMAGE"
+              else
+                echo "::warning :: $image can't push to $REGISTRY_IMAGE"
+                new_id=
+              fi
+              docker logout ${{ inputs.registry }}
+            fi
+          fi
+          if [ -n "${old_id}${new_id}" ]; then
+            echo "fetch=docker pull $REGISTRY_IMAGE" >> $GITHUB_OUTPUT
+            echo "cache=DOCKER_BUILD_OPTS='--cache-from=$REGISTRY_IMAGE'" >> $GITHUB_OUTPUT
+          fi
+          echo "::endgroup::"
+        done

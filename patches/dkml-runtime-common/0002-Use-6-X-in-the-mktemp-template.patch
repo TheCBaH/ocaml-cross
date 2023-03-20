@@ -1,0 +1,64 @@
+From dddb3931c8fbc27e16c15db54e834e61e361e073 Mon Sep 17 00:00:00 2001
+From: "Vladimir N. Silyaev" <vsilyaev@gmail.com>
+Date: Wed, 22 Mar 2023 02:17:36 +0000
+Subject: [PATCH 2/2] Use 6 'X' in the mktemp template
+
+This is required for the busybox (alpine) version of mktemp
+---
+ unix/crossplatform-functions.sh | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/unix/crossplatform-functions.sh b/unix/crossplatform-functions.sh
+index 3f58281..e748ce2 100755
+--- a/unix/crossplatform-functions.sh
++++ b/unix/crossplatform-functions.sh
+@@ -1075,14 +1075,14 @@ autodetect_cpus() {
+     if [ "${NUMCPUS}" -eq 0 ]; then
+         # need temp directory
+         if [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
+-            autodetect_cpus_TEMPDIR=$(mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlcpu.XXXXX)
++            autodetect_cpus_TEMPDIR=$(mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlcpu.XXXXXX)
+         elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
+             autodetect_cpus_TEMPDIR=$(printf "%s" "$TMPDIR" | sed 's#/$##') # remove trailing slash on macOS
+-            autodetect_cpus_TEMPDIR=$(mktemp -d "$autodetect_cpus_TEMPDIR"/dkmlcpu.XXXXX)
++            autodetect_cpus_TEMPDIR=$(mktemp -d "$autodetect_cpus_TEMPDIR"/dkmlcpu.XXXXXX)
+         elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
+-            autodetect_cpus_TEMPDIR=$(mktemp -d "$TMP"/dkmlcpu.XXXXX)
++            autodetect_cpus_TEMPDIR=$(mktemp -d "$TMP"/dkmlcpu.XXXXXX)
+         else
+-            autodetect_cpus_TEMPDIR=$(mktemp -d /tmp/dkmlcpu.XXXXX)
++            autodetect_cpus_TEMPDIR=$(mktemp -d /tmp/dkmlcpu.XXXXXX)
+         fi
+ 
+         # do calculations
+@@ -1508,14 +1508,14 @@ autodetect_compiler() {
+     if [ -n "${WORK:-}" ]; then
+         autodetect_compiler_TEMPDIR=$WORK
+     elif [ -n "${_CS_DARWIN_USER_TEMP_DIR:-}" ]; then # macOS (see `man mktemp`)
+-        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlc.XXXXX)
++        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d "$_CS_DARWIN_USER_TEMP_DIR"/dkmlc.XXXXXX)
+     elif [ -n "${TMPDIR:-}" ]; then # macOS (see `man mktemp`)
+         autodetect_compiler_TEMPDIR=$(printf "%s" "$TMPDIR" | sed 's#/$##') # remove trailing slash on macOS
+-        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d "$autodetect_compiler_TEMPDIR"/dkmlc.XXXXX)
++        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d "$autodetect_compiler_TEMPDIR"/dkmlc.XXXXXX)
+     elif [ -n "${TMP:-}" ]; then # MSYS2 (Windows), Linux
+-        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d "$TMP"/dkmlc.XXXXX)
++        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d "$TMP"/dkmlc.XXXXXX)
+     else
+-        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d /tmp/dkmlc.XXXXX)
++        autodetect_compiler_TEMPDIR=$(PATH=/usr/bin:/bin mktemp -d /tmp/dkmlc.XXXXXX)
+     fi
+     if [ -n "${DKML_TARGET_ABI:-}" ]; then
+         autodetect_compiler_PLATFORM_ARCH=$DKML_TARGET_ABI
+@@ -3050,7 +3050,7 @@ create_workdir() {
+     fi
+     DKML_TMP_PARENTDIR="${DKML_TMP_PARENTDIR:-$make_workdir_DEFAULT}"
+     [ ! -e "$DKML_TMP_PARENTDIR" ] && install -d "$DKML_TMP_PARENTDIR"
+-    WORK=$(PATH=/usr/bin:/bin mktemp -d "$DKML_TMP_PARENTDIR"/dkmlw.XXXXX)
++    WORK=$(PATH=/usr/bin:/bin mktemp -d "$DKML_TMP_PARENTDIR"/dkmlw.XXXXXX)
+     install -d "$WORK"
+ }
+ 
+-- 
+2.30.2
+
