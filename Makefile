@@ -38,7 +38,7 @@ TARGETS=\
  s390x\
  x86_64\
 
-add_arch=$(if $(shell which $1-linux-musl || true),$1-linux-musl=$(realpath ${BUILD_DIR}/$1-linux-musl))
+add_arch=$(if $(shell type $1-linux-musl || true),$1-linux-musl=$(realpath ${BUILD_DIR}/$1-linux-musl))
 
 configure:
 	env TOPDIR=${DKMLDIR}/vendor/drc/all/emptytop\
@@ -57,6 +57,10 @@ CPU_CORES=$(shell getconf _NPROCESSORS_ONLN 2>/dev/null)
 
 native.build.patch-alpine:
 	sed -i 's/INJECT_CFLAGS=.*/INJECT_CFLAGS="-Wno-misleading-indentation"/'\
+	 ${BIN_DIR}/share/dkml/repro/100co/vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
+
+native.build.patch-manylinux2014:
+	sed -i 's/INJECT_CFLAGS=.*/INJECT_CFLAGS="-fPIC"/'\
 	 ${BIN_DIR}/share/dkml/repro/100co/vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
 
 native.build:
@@ -115,7 +119,6 @@ cross.install: TARGET=aarch64-linux-musl
 cross.install:
 	mkdir -p ${TEST_DIR}
 	./install.sh $(if ${TARGET}, ${BIN_DIR}/mlcross/${TARGET},${BIN_DIR}) ${TEST_DIR}/$(or ${TARGET},host) $(or ${TARGET}, host)
-	${MAKE} OCAML_CROSS=$(abspath ${TEST_DIR}/$(or ${TARGET}, host)/bin)/$(or ${TARGET}, host)- $(basename $@).test
 
 patches.make: REPO=dkml-runtime-common
 patches.make:
@@ -147,8 +150,6 @@ image_name=${USER}_$(basename $(1))
 debian.image_run: WORKSPACE_SUFFIX=/test
 
 ubuntu.image_run: WORKSPACE_SUFFIX=/test
-
-%.image: DOCKER_BUILD_CONTEXT=.devcontainer/features
 
 %.image: Dockerfile-%
 	docker build --tag $(call image_name,$@) ${DOCKER_BUILD_OPTS} -f $^\

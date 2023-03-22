@@ -17,6 +17,7 @@ jobs:
         image: >-
           alpine
           debian
+          manylinux2014
           ubuntu
         password: ${{ secrets.GITHUB_TOKEN }}
   devcontainer:

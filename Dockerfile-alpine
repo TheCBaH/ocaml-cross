@@ -1,6 +1,6 @@
 ARG OS_VER=latest
 FROM alpine:${OS_VER}
-COPY musl-cross/install.sh /root/musl-cross.sh
+COPY .devcontainer/features/musl-cross/install.sh /root/musl-cross.sh
 RUN set -eux;\
     apk --no-cache add\
  bash\

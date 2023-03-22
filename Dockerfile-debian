@@ -1,6 +1,6 @@
 ARG OS_VER=latest
 FROM debian:${OS_VER}
-COPY musl-cross/install.sh /root/musl-cross.sh
+COPY .devcontainer/features/musl-cross/install.sh /root/musl-cross.sh
 RUN set -eux;\
     apt-get update;\
     env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends\
@@ -11,5 +11,5 @@ RUN set -eux;\
  wget\
 ;\
     env ARCHITECTURES='aarch64 riscv64 x86_64' /root/musl-cross.sh;\
-    apt-get clean; rm -rf /var/lib/apt/lists/*;\
+    apt-get clean; rm -rf /var/lib/apt/lists/* /root/musl-cross.sh;\
     echo DONE

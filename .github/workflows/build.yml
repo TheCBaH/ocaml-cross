@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         host:
-          - runner
+          - manylinux2014
         ocaml:
           - 4.12
 #          - 4.13.0
@@ -37,6 +37,12 @@ jobs:
           - host: alpine
             target: aarch64
             ocaml: 4.14.0
+          - host: runner
+            target: aarch64
+            ocaml: 4.12
+          - host: runner
+            target: aarch64
+            ocaml: 4.14.0
     steps:
     - name: checkout
       uses: actions/checkout@v3
@@ -44,7 +50,7 @@ jobs:
         submodules: true
     - name: devcontainer
       uses: ./.github/workflows/actions/devcontainer
-      if: ${{ matrix.host == 'devcontainer' }}
+      if: matrix.host == 'devcontainer'
       id: devcontainer
     - name: setup
       run: |
@@ -63,13 +69,11 @@ jobs:
           env ARCHITECTURES='${{ matrix.target }}' .devcontainer/features/musl-cross/install.sh ${HOME}/.local/
           ;;
         esac
-    - name: docker images
+    - name: host images
       uses: ./.github/workflows/actions/docker
+      if: contains('alpine manylinux2014', matrix.host)
       with:
-        image: >-
-          alpine
-          debian
-          ubuntu
+        image: ${{ matrix.host }}
     - name: repo
       run: |
         make repo OCAML_VER=${{ matrix.ocaml }}
@@ -81,7 +85,7 @@ jobs:
         ${{ env.EXEC }} make extract linux-musl.targets configure OCAML_VER=${{ matrix.ocaml }}
         host="${{ matrix.host }}"
         case "$host" in
-        alpine)
+        alpine | manylinux2014)
           ${{ env.EXEC }} make native.build.patch-$host OCAML_VER=${{ matrix.ocaml }}
           ;;
         esac
@@ -91,6 +95,12 @@ jobs:
     - name: test
       run: |
         ${{ env.EXEC }} make native.test OCAML_VER=${{ matrix.ocaml }}
+    - name: test images
+      uses: ./.github/workflows/actions/docker
+      with:
+        image: >-
+          debian
+          ubuntu
     - name: install
       run: |
         echo "::group::install"
@@ -105,25 +115,47 @@ jobs:
         runner)
           make native_relocated.test RELOCATED_IMAGE=ubuntu
           ;;
+        manylinux2014)
+          make native_relocated.test
+          make native_relocated.test RELOCATED_IMAGE=ubuntu
+          ;;
         esac
     - name: cross.build
       run: |
         ${{ env.EXEC }} make cross.build OCAML_VER=${{ matrix.ocaml }} TARGET=${{ matrix.target }}-linux-musl
     - name: cross.test
       run: |
-        ${{ env.EXEC }} make cross.test TARGET=${{ matrix.target }}-linux-musl
+        set -x
+        test="${{ matrix.host }}-${{ matrix.target }}"
+        case "$test" in
+        manylinux2014-riscv64)
+          ;;
+        *)
+          ${{ env.EXEC }} make cross.test TARGET=${{ matrix.target }}-linux-musl
+          ;;
+        esac
     - name: cross.install
       run: |
         echo "::group::${{ matrix.target }}"
         ${{ env.EXEC }} make cross.install TARGET=${{ matrix.target }}-linux-musl
-        echo "::group::${{ matrix.target }} test"
-        ${{ env.EXEC }} make cross_install.test TARGET=${{ matrix.target }}-linux-musl
+        case "${{ matrix.host }}-${{ matrix.target }}" in
+        manylinux2014-riscv64)
+          ;;
+        *)
+          echo "::group::${{ matrix.target }} test"
+          ${{ env.EXEC }} make cross_install.test TARGET=${{ matrix.target }}-linux-musl
+          ;;
+        esac
         echo "::group::${{ matrix.target }} relocated"
         case "${{ matrix.host }}" in
         devcontainer)
           make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl
           ;;
         runner)
+          make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl RELOCATED_IMAGE=ubuntu
+          ;;
+        manylinux2014)
+          make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl
           make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl RELOCATED_IMAGE=ubuntu
           ;;
         esac
@@ -173,7 +205,10 @@ jobs:
         sudo env PACKAGES='file qemu-user time' .devcontainer/features/apt-packages/install.sh
         echo "::group::musl-cross"
         sudo env ARCHITECTURES='${{ matrix.target }}' .devcontainer/features/musl-cross/install.sh
-    - name: test
+    - name: test runner
       run: |
         ls -alr .artifacts
         .github/workflows/test-release.sh .artifacts ${{ matrix.target }} runner
+    - name: test manylinux2014
+      run: |
+        .github/workflows/test-release.sh .artifacts ${{ matrix.target }} manylinux2014
