@@ -14,5 +14,7 @@ cross.test: ${BUILD_DIR}/.exists
 	${OCAML_CROSS}ocaml hello.ml
 	${OCAML_CROSS}ocamlc hello.ml -o ${BUILD_DIR}/hello.bc && ${OCAML_CROSS}ocamlrun ${BUILD_DIR}/hello.bc
 	${OCAML_CROSS}ocamlc.byte hello.ml -o ${BUILD_DIR}/hello.bc && ${OCAML_CROSS}ocamlrun ${BUILD_DIR}/hello.bc
-	${OCAML_CROSS}ocamlopt hello.ml -o ${BUILD_DIR}/hello.bin && file ${BUILD_DIR}/hello.bin && ${TARGET} ${BUILD_DIR}/hello.bin
-	${OCAML_CROSS}ocamlopt.byte hello.ml -o ${BUILD_DIR}/hello.bin && file ${BUILD_DIR}/hello.bin && ${TARGET} ${BUILD_DIR}/hello.bin
+	${OCAML_CROSS}ocamlopt -v
+	${OCAML_CROSS}ocamlopt -verbose hello.ml -o ${BUILD_DIR}/hello.bin && file ${BUILD_DIR}/hello.bin && ${TARGET} ${BUILD_DIR}/hello.bin
+	${OCAML_CROSS}ocamlopt.byte -verbose hello.ml -o ${BUILD_DIR}/hello.bin && file ${BUILD_DIR}/hello.bin && ${TARGET} ${BUILD_DIR}/hello.bin
+	${OCAML_CROSS}ocamlopt.opt -verbose hello.ml -o ${BUILD_DIR}/hello.bin && file ${BUILD_DIR}/hello.bin && ${TARGET} ${BUILD_DIR}/hello.bin

@@ -1,0 +1,33 @@
+From 9b0ed40a5c9c0a2368efa20aa180e04cceb2f481 Mon Sep 17 00:00:00 2001
+From: "Vladimir N. Silyaev" <vsilyaev@gmail.com>
+Date: Mon, 27 Mar 2023 03:38:49 +0000
+Subject: [PATCH 3/3] Detect CentOS6
+
+---
+ unix/crossplatform-functions.sh | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/unix/crossplatform-functions.sh b/unix/crossplatform-functions.sh
+index e748ce2..0594ec5 100755
+--- a/unix/crossplatform-functions.sh
++++ b/unix/crossplatform-functions.sh
+@@ -897,9 +897,14 @@ install_reproducible_system_packages() {
+         } > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_SCRIPTFILE"
+         # truncate package list, since already embedded in script
+         true > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
+-    elif [ -x /usr/bin/rpm ] && [ -x /usr/bin/yum ]; then
++    elif ( [ -x /bin/rpm ] || [ -x /usr/bin/rpm ] ) && [ -x /usr/bin/yum ]; then
+         # older Fedora packages
+-        /usr/bin/rpm -qa > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
++        if [ -x /usr/bin/rpm ]; then
++            rpm="/usr/bin/rpm"
++        else
++            rpm="/bin/rpm"
++        fi
++        $rpm -qa > "$install_reproducible_system_packages_BOOTSTRAPDIR"/"$install_reproducible_system_packages_PACKAGEFILE"
+         {
+             printf "#!/bin/sh\n"
+             printf "sudo /usr/bin/yum -y install "
+-- 
+2.30.2
+

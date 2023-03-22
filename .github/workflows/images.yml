@@ -2,6 +2,8 @@ name: images
 
 on:
   push:
+    branches:
+      - '**'
 
 jobs:
   docker:
@@ -17,6 +19,7 @@ jobs:
         image: >-
           alpine
           debian
+          manylinux2010
           manylinux2014
           ubuntu
         password: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,27 @@
+FROM centos:centos6
+RUN set -eux;\
+    sed -i -E\
+     -e 's,^#(baseurl=http://)[a-z]+(\.centos\.org/)centos/(.+)/(.+)/(.+)/,\1linuxsoft.cern.ch/centos-vault/6.10/\4/\5,'\
+     -e 's/^(mirrorlist=)/#\1/'\
+      /etc/yum.repos.d/CentOS-Base.repo;\
+    yum -y install\
+ gcc\
+ make\
+ wget\
+ xz\
+    ;\
+    yum clean all;\
+    echo DONE
+RUN set -eux;\
+    cd /tmp;\
+    for f in git-2.35.7.tar.xz; do\
+        wget --progress=dot:giga https://github.com/TheCBaH/git.builder/releases/download/v0.0.1/$f;\
+        tar -xf /tmp/$f -C /usr/local;\
+        rm -f $f;\
+    done;\
+    echo DONE
+COPY .devcontainer/features/musl-cross/install.sh /root/musl-cross.sh
+RUN set -eux;\
+    env ARCHITECTURES='aarch64 riscv64 x86_64' /root/musl-cross.sh;\
+    rm -f /root/musl-cross.sh;\
+    echo DONE

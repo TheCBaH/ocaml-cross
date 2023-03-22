@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         host:
-          - manylinux2014
+          - manylinux2010
         ocaml:
           - 4.12
 #          - 4.13.0
@@ -43,6 +43,9 @@ jobs:
           - host: runner
             target: aarch64
             ocaml: 4.14.0
+          - host: manylinux2014
+            target: aarch64
+            ocaml: 4.14.0
     steps:
     - name: checkout
       uses: actions/checkout@v3
@@ -56,8 +59,8 @@ jobs:
       run: |
         host="${{ matrix.host }}"
         case "$host" in
-        alpine | manylinux2014)
-          echo "EXEC=.github/workflows/with-docker.sh $host" >> $GITHUB_ENV
+        alpine | manylinux* )
+          echo "EXEC=./with-docker $host" >> $GITHUB_ENV
           ;;
         devcontainer)
           echo 'EXEC=${{ steps.devcontainer.outputs.exec }}' >> $GITHUB_ENV
@@ -71,7 +74,7 @@ jobs:
         esac
     - name: host images
       uses: ./.github/workflows/actions/docker
-      if: contains('alpine manylinux2014', matrix.host)
+      if: contains('alpine manylinux2010 manylinux2014', matrix.host)
       with:
         image: ${{ matrix.host }}
     - name: repo
@@ -85,7 +88,7 @@ jobs:
         ${{ env.EXEC }} make extract linux-musl.targets configure OCAML_VER=${{ matrix.ocaml }}
         host="${{ matrix.host }}"
         case "$host" in
-        alpine | manylinux2014)
+        alpine | manylinux201*)
           ${{ env.EXEC }} make native.build.patch-$host OCAML_VER=${{ matrix.ocaml }}
           ;;
         esac
@@ -115,7 +118,7 @@ jobs:
         runner)
           make native_relocated.test RELOCATED_IMAGE=ubuntu
           ;;
-        manylinux2014)
+        manylinux201*)
           make native_relocated.test
           make native_relocated.test RELOCATED_IMAGE=ubuntu
           ;;
@@ -128,7 +131,7 @@ jobs:
         set -x
         test="${{ matrix.host }}-${{ matrix.target }}"
         case "$test" in
-        manylinux2014-riscv64)
+        manylinux2014-riscv64 | manylinux2010-*)
           ;;
         *)
           ${{ env.EXEC }} make cross.test TARGET=${{ matrix.target }}-linux-musl
@@ -139,7 +142,7 @@ jobs:
         echo "::group::${{ matrix.target }}"
         ${{ env.EXEC }} make cross.install TARGET=${{ matrix.target }}-linux-musl
         case "${{ matrix.host }}-${{ matrix.target }}" in
-        manylinux2014-riscv64)
+        manylinux2014-riscv64 | manylinux2010-*)
           ;;
         *)
           echo "::group::${{ matrix.target }} test"
@@ -154,7 +157,7 @@ jobs:
         runner)
           make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl RELOCATED_IMAGE=ubuntu
           ;;
-        manylinux2014)
+        manylinux201*)
           make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl
           make cross_relocated.test TARGET=${{ matrix.target }}-linux-musl RELOCATED_IMAGE=ubuntu
           ;;
@@ -212,3 +215,6 @@ jobs:
     - name: test manylinux2014
       run: |
         .github/workflows/test-release.sh .artifacts ${{ matrix.target }} manylinux2014
+    - name: test manylinux2010
+      run: |
+        .github/workflows/test-release.sh .artifacts ${{ matrix.target }} manylinux2010

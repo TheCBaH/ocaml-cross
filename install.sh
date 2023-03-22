@@ -54,11 +54,12 @@ tools_bc="$tools_bc\
 "
 
 tools="\
- ocamlopt\
  ocamlc\
- ocamlmklib\
- ocamldep\
  ocamlcp\
+ ocamldep\
+ ocamlmklib\
+ ocamlopt.opt\
+ ocamlopt\
 "
 
 tools="$tools\

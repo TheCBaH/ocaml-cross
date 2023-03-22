@@ -1,7 +1,7 @@
 From dddb3931c8fbc27e16c15db54e834e61e361e073 Mon Sep 17 00:00:00 2001
 From: "Vladimir N. Silyaev" <vsilyaev@gmail.com>
 Date: Wed, 22 Mar 2023 02:17:36 +0000
-Subject: [PATCH 2/2] Use 6 'X' in the mktemp template
+Subject: [PATCH 2/3] Use 6 'X' in the mktemp template
 
 This is required for the busybox (alpine) version of mktemp
 ---

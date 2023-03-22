@@ -1,0 +1,25 @@
+From 4150330f51a771f1771e0f3ee25f4fb4c846b440 Mon Sep 17 00:00:00 2001
+From: "Vladimir N. Silyaev" <vsilyaev@gmail.com>
+Date: Mon, 27 Mar 2023 03:43:15 +0000
+Subject: [PATCH] Don't pass -c to the gnu as
+
+---
+ env/standard-compiler-env-to-ocaml-configure-env.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/env/standard-compiler-env-to-ocaml-configure-env.sh b/env/standard-compiler-env-to-ocaml-configure-env.sh
+index 057f56c..1e65252 100644
+--- a/env/standard-compiler-env-to-ocaml-configure-env.sh
++++ b/env/standard-compiler-env-to-ocaml-configure-env.sh
+@@ -437,7 +437,7 @@ windows_*,ml64|windows_*,ml64.exe|windows_*,*/ml64|windows_*,*/ml64.exe|windows_
+   ;;
+ *,*)
+   if [ -n "${autodetect_compiler_AS:-}" ]; then
+-    autodetect_compiler_ASFLAGS="-c${autodetect_compiler_ASFLAGS:+ $autodetect_compiler_ASFLAGS}"
++    autodetect_compiler_ASFLAGS="${autodetect_compiler_ASFLAGS:+ $autodetect_compiler_ASFLAGS}"
+   fi
+   autodetect_compiler_AS="${autodetect_compiler_AS:-}${autodetect_compiler_ASFLAGS:+ $autodetect_compiler_ASFLAGS}"
+   autodetect_compiler_ASFLAGS=
+-- 
+2.30.2
+

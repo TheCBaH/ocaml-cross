@@ -63,6 +63,9 @@ native.build.patch-manylinux2014:
 	sed -i 's/INJECT_CFLAGS=.*/INJECT_CFLAGS="-fPIC"/'\
 	 ${BIN_DIR}/share/dkml/repro/100co/vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
 
+native.build.patch-manylinux2010: native.build.patch-manylinux2014
+	sed -E -i 's/(__secure_getenv)/\1_undefined/g' ${BIN_DIR}/src-ocaml/configure ${BIN_DIR}/src-ocaml/configure.ac
+
 native.build:
 	cd ${BIN_DIR} && env\
 	 NUMCPUS=${CPU_CORES}\
@@ -120,23 +123,30 @@ cross.install:
 	mkdir -p ${TEST_DIR}
 	./install.sh $(if ${TARGET}, ${BIN_DIR}/mlcross/${TARGET},${BIN_DIR}) ${TEST_DIR}/$(or ${TARGET},host) $(or ${TARGET}, host)
 
-patches.make: REPO=dkml-runtime-common
-patches.make:
+patches.make.repo:
 	git -C ${REPO} format-patch $$(git ls-tree HEAD ${REPO} | awk '{print $$3}')
-	mkdir -p $(basename $@)/${REPO}
-	mkdir -p $(basename $@)/${REPO}
-	mv -v ${REPO}/00* $(basename $@)/${REPO}/
+	mkdir -p $(basename $(basename $@))/${REPO}
+	mkdir -p $(basename $(basename $@))/${REPO}
+	mv -v ${REPO}/00* $(basename $(basename $@))/${REPO}/
+
+patches.make:
+	${MAKE} REPO=dkml-runtime-common $@.repo
+	${MAKE} REPO=dkml-compiler $@.repo
 
 patches.apply: REPO=dkml-runtime-common
-patches.apply:
+patches.apply.repo:
 	git -C ${REPO} checkout .
-	set -eux; for p in $(wildcard $(realpath $(basename $@))/${REPO}/*); do\
+	set -eux; for p in $(wildcard $(realpath $(basename $(basename $@)))/${REPO}/*); do\
 	  if [ -z "$(git config user.email)" ]; then\
 	    git -C ${REPO} apply --verbose $$p;\
 	  else\
 	     git -C ${REPO} am $$p;\
 	  fi;\
 	done
+
+patches.apply:
+	${MAKE} REPO=dkml-runtime-common $@.repo
+	${MAKE} REPO=dkml-compiler $@.repo
 
 ID_OFFSET=$(or $(shell id -u docker 2>/dev/null),0)
 UID=$(shell expr $$(id -u) - ${ID_OFFSET})

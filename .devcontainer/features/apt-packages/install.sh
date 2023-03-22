@@ -4,7 +4,7 @@ set -x
 
 echo "Activating feature 'apt_packages'"
 
-PACKAGES=${PACKAGES:-undefined}
+PACKAGES=${PACKAGES:-$@}
 echo "Selected packages: $PACKAGES"
 
 # From https://github.com/devcontainers/features/blob/main/src/git/install.sh
@@ -20,7 +20,10 @@ apt_get_update()
 check_packages() {
     if ! dpkg -s "$@" > /dev/null 2>&1; then
         apt_get_update
-        apt-get -y install --no-install-recommends "$@"
+        if ! apt-get -o Acquire::Retries=3 -y install --no-install-recommends "$@"; then
+            apt-get update -y
+            apt-get -o Acquire::Retries=3 -y install --no-install-recommends "$@"
+        fi
     fi
 }
 
