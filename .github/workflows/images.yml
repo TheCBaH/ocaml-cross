@@ -19,6 +19,7 @@ jobs:
         image: >-
           alpine
           debian
+          manylinux1
           manylinux2010
           manylinux2014
           ubuntu

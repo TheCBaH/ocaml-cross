@@ -1,16 +1,29 @@
-FROM centos:centos6
+FROM centos:centos5
 RUN set -eux;\
-    sed -i -E\
-     -e 's,^#(baseurl=http://)[a-z]+(\.centos\.org/)centos/(.+)/(.+)/(.+)/,\1linuxsoft.cern.ch/centos-vault/6.10/\4/\5,'\
+    sed -i -r\
+     -e 's,^#(baseurl=http://)[a-z]+(\.centos\.org/)centos/(.+)/(.+)/(.+)/,\1linuxsoft.cern.ch/centos-vault/5.11/\4/\5,'\
      -e 's/^(mirrorlist=)/#\1/'\
-      /etc/yum.repos.d/CentOS-Base.repo;\
-    yum -y install\
- curl\
+      /etc/yum.repos.d/*.repo;\
+    yum -v  --noplugins repolist;\
+    yum -y -v --noplugins install\
+ file\
  gcc\
  make\
  xz\
     ;\
     yum clean all;\
+    echo DONE
+COPY _build/downloads/* /tmp/
+RUN set -eux;\
+    ls -alr /tmp;\
+    for f in /tmp/*.tar*; do\
+        if [ -f $f ]; then\
+            tar -xvf $f -C /usr/local;\
+        fi;\
+    done;\
+    install -d /etc/ssl/certs;\
+    install /tmp/ca-certificates.crt /etc/ssl/certs/;\
+    rm -rf /tmp/*;\
     echo DONE
 RUN set -eux;\
     cd /tmp;\

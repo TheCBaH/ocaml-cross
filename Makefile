@@ -64,7 +64,11 @@ native.build.patch-manylinux2014:
 	 ${BIN_DIR}/share/dkml/repro/100co/vendor/dkml-compiler/env/standard-compiler-env-to-ocaml-configure-env.sh
 
 native.build.patch-manylinux2010: native.build.patch-manylinux2014
-	sed -E -i 's/(__secure_getenv)/\1_undefined/g' ${BIN_DIR}/src-ocaml/configure ${BIN_DIR}/src-ocaml/configure.ac
+	sed -r -i 's/(__secure_getenv)/\1_undefined/g' ${BIN_DIR}/src-ocaml/configure ${BIN_DIR}/src-ocaml/configure.ac
+
+native.build.patch-manylinux1: native.build.patch-manylinux2010
+	sed -i '1 i #define _GNU_SOURCE' ${BIN_DIR}/src-ocaml/ocamltest/run_unix.c ${BIN_DIR}/src-ocaml/otherlibs/unix/socketaddr.c
+	sed -i '1 i #define _XOPEN_SOURCE 500' ${BIN_DIR}/src-ocaml/otherlibs/systhreads/st_stubs.c
 
 native.build:
 	cd ${BIN_DIR} && env\
@@ -161,10 +165,23 @@ debian.image_run: WORKSPACE_SUFFIX=/test
 
 ubuntu.image_run: WORKSPACE_SUFFIX=/test
 
+CURL_TAR=curl-7.88.1.tar.gz
+
+${BUILD_DIR}/downloads/curl/${CURL_TAR}:
+	mkdir -p $(basename $@)
+	curl -o $@.tmp --location --show-error https://github.com/TheCBaH/git.builder/releases/download/v0.0.1/${CURL_TAR}
+	mv $@.tmp $@
+
+${BUILD_DIR}/downloads/ca-certificates.crt:
+	cp /etc/ssl/certs/$(notdir $@) $@
+
+manylinux1.image: ${BUILD_DIR}/downloads/curl/${CURL_TAR} ${BUILD_DIR}/downloads/ca-certificates.crt
+
 %.image: Dockerfile-%
-	docker build --tag $(call image_name,$@) ${DOCKER_BUILD_OPTS} -f $^\
+	env BUILDKIT_PROGRESS=plain docker build --tag $(call image_name,$@) ${DOCKER_BUILD_OPTS} -f $<\
 	 $(if ${http_proxy},--build-arg http_proxy=${http_proxy})\
-	$(or ${DOCKER_BUILD_CONTEXT},.)
+	 $(or ${DOCKER_BUILD_CONTEXT},.)
+	rm -f $(filter ${BUILD_DIR}/downloads/%, $^)
 
 %.image_run:
 	docker run --rm --init --hostname $@ -i${TERMINAL} -w ${WORKSPACE}\

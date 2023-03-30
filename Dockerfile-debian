@@ -6,9 +6,9 @@ RUN set -eux;\
     env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends\
  build-essential\
  ca-certificates\
+ curl\
  file\
  qemu-user\
- wget\
 ;\
     env ARCHITECTURES='aarch64 riscv64 x86_64' /root/musl-cross.sh;\
     apt-get clean; rm -rf /var/lib/apt/lists/* /root/musl-cross.sh;\

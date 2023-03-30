@@ -4,6 +4,7 @@ COPY .devcontainer/features/musl-cross/install.sh /root/musl-cross.sh
 RUN set -eux;\
     apk --no-cache add\
  bash\
+ curl\
  file\
  gcc\
  git\
@@ -17,7 +18,7 @@ RUN set -eux;\
  qemu-riscv64\
  qemu-s390x\
  qemu-x86_64\
- wget\
+ xz\
  ;\
     env ARCHITECTURES='aarch64 riscv64 x86_64' /root/musl-cross.sh;\
     echo DONE
