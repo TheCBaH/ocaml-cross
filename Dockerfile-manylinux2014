@@ -9,13 +9,20 @@ RUN set -eux;\
     ;\
     yum -y install \
  https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm\
- https://repo.ius.io/ius-release-el7.rpm\
     ;\
     yum -y install\
- git236-core\
  qemu-user\
     ;\
     yum clean all;\
+    echo DONE
+RUN set -eux;\
+    cd /tmp;\
+    for f in git-2.35.7.tar.xz; do\
+        curl -o $f --location --show-error https://github.com/TheCBaH/git.builder/releases/download/v0.0.1/$f;\
+        xz -d $f ; f=${f%.xz};\
+        tar -xf $f -C /usr/local;\
+        rm -f $f;\
+    done;\
     echo DONE
 COPY .devcontainer/features/musl-cross/install.sh /root/musl-cross.sh
 RUN set -eux;\
