@@ -1,11 +1,13 @@
 FROM centos:centos5
 RUN set -eux;\
+    version="$(awk '/release/{print $3}' /etc/issue)";\
+    mirror='linuxsoft.cern.ch/centos-vault';\
     sed -i -r\
-     -e 's,^#(baseurl=http://)[a-z]+(\.centos\.org/)centos/(.+)/(.+)/(.+)/,\1linuxsoft.cern.ch/centos-vault/5.11/\4/\5,'\
+     -e "s,^#(baseurl=http://)[a-z]+(\.centos\.org/)centos/(.+)/(.+)/(.+)/,\1$mirror/$version/\4/\5,"\
      -e 's/^(mirrorlist=)/#\1/'\
       /etc/yum.repos.d/*.repo;\
-    yum -v  --noplugins repolist;\
-    yum -y -v --noplugins install\
+    yum -v --noplugins repolist;\
+    yum -v -y --noplugins install\
  file\
  gcc\
  make\
