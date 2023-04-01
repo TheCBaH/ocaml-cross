@@ -49,6 +49,9 @@ jobs:
           - host: manylinux1
             target: aarch64
             ocaml: 4.12
+          - host: manylinux_2_28
+            target: aarch64
+            ocaml: 4.14.0
     steps:
     - name: checkout
       uses: actions/checkout@v3
@@ -77,7 +80,7 @@ jobs:
         esac
     - name: host images
       uses: ./.github/workflows/actions/docker
-      if: contains('alpine manylinux1 manylinux2010 manylinux2014', matrix.host)
+      if: contains('alpine manylinux1 manylinux_2_28 manylinux2010 manylinux2014', matrix.host)
       with:
         image: ${{ matrix.host }}
     - name: repo
@@ -134,7 +137,7 @@ jobs:
         set -x
         test="${{ matrix.host }}-${{ matrix.target }}"
         case "$test" in
-        manylinux2014-riscv64 | manylinux1-* | manylinux2010-*)
+        manylinux2014-riscv64 | manylinux1-* | manylinux_2_* | manylinux2010-*)
           ;;
         *)
           ${{ env.EXEC }} make cross.test TARGET=${{ matrix.target }}-linux-musl
@@ -145,7 +148,7 @@ jobs:
         echo "::group::${{ matrix.target }}"
         ${{ env.EXEC }} make cross.install TARGET=${{ matrix.target }}-linux-musl
         case "${{ matrix.host }}-${{ matrix.target }}" in
-        manylinux2014-riscv64 | manylinux1-* | manylinux2010-*)
+        manylinux2014-riscv64 | manylinux1-* | manylinux_2_* | manylinux2010-*)
           ;;
         *)
           echo "::group::${{ matrix.target }} test"
@@ -223,5 +226,8 @@ jobs:
       run: |
         .github/workflows/test-release.sh .artifacts ${{ matrix.target }} manylinux2010
     - name: test manylinux1
+      run: |
+        .github/workflows/test-release.sh .artifacts ${{ matrix.target }} manylinux1
+    - name: test manylinux_2_28
       run: |
         .github/workflows/test-release.sh .artifacts ${{ matrix.target }} manylinux1
