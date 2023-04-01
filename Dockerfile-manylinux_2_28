@@ -1,0 +1,17 @@
+FROM almalinux:8
+RUN set -eux;\
+    yum -y install\
+ curl\
+ file\
+ gcc\
+ git\
+ make\
+ tar\
+    ;\
+    yum clean all;\
+    echo DONE
+COPY .devcontainer/features/musl-cross/install.sh /root/musl-cross.sh
+RUN set -eux;\
+    env ARCHITECTURES='aarch64 riscv64 x86_64' /root/musl-cross.sh;\
+    rm -f /root/musl-cross.sh;\
+    echo DONE
