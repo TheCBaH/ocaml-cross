@@ -2,6 +2,7 @@ FROM almalinux:8
 RUN set -eux;\
     yum -y install\
  curl\
+ diffutils\
  file\
  gcc\
  git\
